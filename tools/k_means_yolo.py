@@ -22,10 +22,10 @@ def overlap(x1, len1, x2, len2):
     len1_half = len1 / 2
     len2_half = len2 / 2
 
-    left = max(x1 - len1_half, x2 - len2_half)
-    right = min(x1 + len1_half, x2 + len2_half)
+    left = max(x1 - len1_half, x2 - len2_half)#左边交点
+    right = min(x1 + len1_half, x2 + len2_half)#右边交点
 
-    return right - left
+    return right - left#重叠长度
 
 
 # 计算box a 和box b 的交集面积
@@ -65,35 +65,35 @@ def init_centroids(boxes,n_anchors):
     centroids = []
     boxes_num = len(boxes)
 
-    centroid_index = np.random.choice(boxes_num, 1)
+    centroid_index = np.random.choice(boxes_num, 1)#随机选择一个初始中心
     centroids.append(boxes[centroid_index])
 
     print(centroids[0].w,centroids[0].h)
 
-    for centroid_index in range(0,n_anchors-1):
+    for centroid_index in range(0,n_anchors-1):#再选出 n_anchors-1个框
 
         sum_distance = 0
         distance_thresh = 0
         distance_list = []
         cur_sum = 0
 
-        for box in boxes:
+        for box in boxes:#筛选每一个 box框
             min_distance = 1
-            for centroid_i, centroid in enumerate(centroids):
-                distance = (1 - box_iou(box, centroid))
+            for centroid_i, centroid in enumerate(centroids):# index 实例 每一个中心框
+                distance = (1 - box_iou(box, centroid))# 当前框和 中心框的交叠程度逆  dis越大 交叠的越少
                 if distance < min_distance:
-                    min_distance = distance
+                    min_distance = distance#最小的距离  最相似 本box框离哪个中心最近
             sum_distance += min_distance
             distance_list.append(min_distance)
 
         distance_thresh = sum_distance*np.random.random()
 
-        for i in range(0,boxes_num):
-            cur_sum += distance_list[i]
-            if cur_sum > distance_thresh:
-                centroids.append(boxes[i])
+        for i in range(0,boxes_num):#对于所以的框
+            cur_sum += distance_list[i]#当前距离和
+            if cur_sum > distance_thresh:#距离超过阈值
+                centroids.append(boxes[i])# 新添加一个聚类中心框
                 print(boxes[i].w, boxes[i].h)
-                break
+                break#结束本次循环
 
     return centroids
 
@@ -109,25 +109,25 @@ def do_kmeans(n_anchors, boxes, centroids):
     loss = 0
     groups = []
     new_centroids = []
-    for i in range(n_anchors):
+    for i in range(n_anchors):#初始化每一个中心
         groups.append([])
         new_centroids.append(Box(0, 0, 0, 0))
 
-    for box in boxes:
+    for box in boxes:#对于每一个数据 框
         min_distance = 1
         group_index = 0
-        for centroid_index, centroid in enumerate(centroids):
-            distance = (1 - box_iou(box, centroid))
+        for centroid_index, centroid in enumerate(centroids):#遍历已经存在 中心框
+            distance = (1 - box_iou(box, centroid))#距离
             if distance < min_distance:
-                min_distance = distance
-                group_index = centroid_index
-        groups[group_index].append(box)
-        loss += min_distance
-        new_centroids[group_index].w += box.w
+                min_distance = distance#离那个中心最近
+                group_index = centroid_index#记录所属的中心 索引
+        groups[group_index].append(box)#添加到 对应的中心簇
+        loss += min_distance#离中心的距离
+        new_centroids[group_index].w += box.w#该中心所以边框大小
         new_centroids[group_index].h += box.h
 
     for i in range(n_anchors):
-        new_centroids[i].w /= len(groups[i])
+        new_centroids[i].w /= len(groups[i])#边框大小均值
         new_centroids[i].h /= len(groups[i])
 
     return new_centroids, groups, loss
