@@ -1,3 +1,4 @@
+# darknet 中文注释
 ![Darknet Logo](http://pjreddie.com/media/files/darknet-black-small.png)
 
 #Darknet#
