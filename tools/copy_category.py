@@ -1,4 +1,5 @@
 # coding=utf-8
+# 从数据中拷贝特点类别的图片和标签等
 
 import os
 import shutil
