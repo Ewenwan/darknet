@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// 创建激活层
 layer make_activation_layer(int batch, int inputs, ACTIVATION activation)
 {
     layer l = {0};
@@ -18,8 +19,8 @@ layer make_activation_layer(int batch, int inputs, ACTIVATION activation)
     l.outputs = inputs;
     l.batch=batch;
 
-    l.output = calloc(batch*inputs, sizeof(float*));
-    l.delta = calloc(batch*inputs, sizeof(float*));
+    l.output = calloc(batch*inputs, sizeof(float*)); // 输出内存
+    l.delta = calloc(batch*inputs, sizeof(float*));  // 梯度内存
 
     l.forward = forward_activation_layer;
     l.backward = backward_activation_layer;
@@ -27,11 +28,11 @@ layer make_activation_layer(int batch, int inputs, ACTIVATION activation)
     l.forward_gpu = forward_activation_layer_gpu;
     l.backward_gpu = backward_activation_layer_gpu;
 
-    l.output_gpu = cuda_make_array(l.output, inputs*batch);
+    l.output_gpu = cuda_make_array(l.output, inputs*batch); // cuda gpu 内存
     l.delta_gpu = cuda_make_array(l.delta, inputs*batch);
 #endif
-    l.activation = activation;
-    fprintf(stderr, "Activation Layer: %d inputs\n", inputs);
+    l.activation = activation; // 激活类型
+    fprintf(stderr, "Activation Layer: %d inputs\n", inputs); // 打印信息
     return l;
 }
 
