@@ -1,3 +1,4 @@
+// 各种激活函数与反激活函数的cuda 单元素/数组 实现 cuda线程组入口 
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -7,17 +8,21 @@ extern "C" {
 #include "cuda.h"
 }
 
-
+//=====================================================
+// f(x) = 0.001*x [,0)
+//      =  x      [0,1]
+//        0.001(x-1)+1 (1,)
 __device__ float lhtan_activate_kernel(float x)
 {
     if(x < 0) return .001*x;
     if(x > 1) return .001*(x-1) + 1;
     return x;
 }
+//  对应 导数梯度
 __device__ float lhtan_gradient_kernel(float x)
 {
-    if(x > 0 && x < 1) return 1;
-    return .001;
+    if(x > 0 && x < 1) return 1; // 0~1之间 导数为 1
+    return .001;                 // 其他地方为 0.001
 }
 
 __device__ float hardtan_activate_kernel(float x)
@@ -28,13 +33,18 @@ __device__ float hardtan_activate_kernel(float x)
 }
 __device__ float linear_activate_kernel(float x){return x;}
 __device__ float logistic_activate_kernel(float x){return 1./(1. + exp(-x));}
+
 __device__ float loggy_activate_kernel(float x){return 2./(1. + exp(-x)) - 1;}
+
+// relu激活函数=====
 __device__ float relu_activate_kernel(float x){return x*(x>0);}
+
 __device__ float elu_activate_kernel(float x){return (x >= 0)*x + (x < 0)*(exp(x)-1);}
 __device__ float relie_activate_kernel(float x){return (x>0) ? x : .01*x;}
 __device__ float ramp_activate_kernel(float x){return x*(x>0)+.1*x;}
 __device__ float leaky_activate_kernel(float x){return (x>0) ? x : .1*x;}
 __device__ float tanh_activate_kernel(float x){return (2/(1 + exp(-2*x)) - 1);}
+
 __device__ float plse_activate_kernel(float x)
 {
     if(x < -4) return .01 * (x + 4);
@@ -47,7 +57,9 @@ __device__ float stair_activate_kernel(float x)
     if (n%2 == 0) return floor(x/2.);
     else return (x - n) + floor(x/2.);
 }
- 
+
+
+// 对应上面激活函数  的  导数 梯度函数=====================
 
 __device__ float hardtan_gradient_kernel(float x)
 {
@@ -74,6 +86,7 @@ __device__ float stair_gradient_kernel(float x)
     return 1;
 }
 
+// 激活函数===========大switch实现===============
 __device__ float activate_kernel(float x, ACTIVATION a)
 {
     switch(a){
@@ -107,6 +120,8 @@ __device__ float activate_kernel(float x, ACTIVATION a)
     return 0;
 }
 
+
+// 激活函数的 导函数 梯度函数======大switch实现========
 __device__ float gradient_kernel(float x, ACTIVATION a)
 {
     switch(a){
@@ -140,24 +155,28 @@ __device__ float gradient_kernel(float x, ACTIVATION a)
     return 0;
 }
 
+// 对数组元素 实现的 激活 与 反激活 ========cuda线程组块格=====核函数==========
+// 激活
 __global__ void activate_array_kernel(float *x, int n, ACTIVATION a)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if(i < n) x[i] = activate_kernel(x[i], a);
 }
-
+// 反激活 梯度反传播===
 __global__ void gradient_array_kernel(float *x, int n, ACTIVATION a, float *delta)
 {
     int i = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
     if(i < n) delta[i] *= gradient_kernel(x[i], a);
 }
 
+// cuda 激活函数 入口=======
 extern "C" void activate_array_ongpu(float *x, int n, ACTIVATION a) 
 {
     activate_array_kernel<<<cuda_gridsize(n), BLOCK>>>(x, n, a);
     check_error(cudaPeekAtLastError());
 }
 
+// cuda 反激活函数入口======
 extern "C" void gradient_array_ongpu(float *x, int n, ACTIVATION a, float *delta) 
 {
     gradient_array_kernel<<<cuda_gridsize(n), BLOCK>>>(x, n, a, delta);
