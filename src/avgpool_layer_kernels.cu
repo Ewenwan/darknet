@@ -1,3 +1,4 @@
+// 均值池化层gpu实现  前向传播/反向传播核函数  接口函数 
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
@@ -6,10 +7,10 @@ extern "C" {
 #include "avgpool_layer.h"
 #include "cuda.h"
 }
-
+// 前向传播 核函数
 __global__ void forward_avgpool_layer_kernel(int n, int w, int h, int c, float *input, float *output)
 {
-    int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
+    int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;// 每个线程负责一个通道 其 id
     if(id >= n) return;
 
     int k = id % c;
@@ -21,14 +22,15 @@ __global__ void forward_avgpool_layer_kernel(int n, int w, int h, int c, float *
     output[out_index] = 0;
     for(i = 0; i < w*h; ++i){
         int in_index = i + h*w*(k + b*c);
-        output[out_index] += input[in_index];
+        output[out_index] += input[in_index]; // 求和
     }
-    output[out_index] /= w*h;
+    output[out_index] /= w*h;// 求平均 
 }
 
+// 反向传播核函数
 __global__ void backward_avgpool_layer_kernel(int n, int w, int h, int c, float *in_delta, float *out_delta)
 {
-    int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;
+    int id = (blockIdx.x + blockIdx.y*gridDim.x) * blockDim.x + threadIdx.x;// 每个线程负责一个通道 其 id
     if(id >= n) return;
 
     int k = id % c;
@@ -45,7 +47,7 @@ __global__ void backward_avgpool_layer_kernel(int n, int w, int h, int c, float 
 
 extern "C" void forward_avgpool_layer_gpu(avgpool_layer layer, network_state state)
 {
-    size_t n = layer.c*layer.batch;
+    size_t n = layer.c*layer.batch; // 通道id
 
     forward_avgpool_layer_kernel<<<cuda_gridsize(n), BLOCK>>>(n, layer.w, layer.h, layer.c, state.input, layer.output_gpu);
     check_error(cudaPeekAtLastError());
@@ -53,7 +55,7 @@ extern "C" void forward_avgpool_layer_gpu(avgpool_layer layer, network_state sta
 
 extern "C" void backward_avgpool_layer_gpu(avgpool_layer layer, network_state state)
 {
-    size_t n = layer.c*layer.batch;
+    size_t n = layer.c*layer.batch;// 通道id
 
     backward_avgpool_layer_kernel<<<cuda_gridsize(n), BLOCK>>>(n, layer.w, layer.h, layer.c, state.delta, layer.delta_gpu);
     check_error(cudaPeekAtLastError());
