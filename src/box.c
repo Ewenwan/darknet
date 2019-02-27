@@ -1,8 +1,10 @@
+// 检测框 矩形框相关函数  
 #include "box.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 
+// 数组转成 box 结构体
 box float_to_box(float *f)
 {
     box b;
@@ -64,6 +66,15 @@ dbox derivative(box a, box b)
     return d;
 }
 
+/** 计算两个矩形框相交部分矩形的某一边的边长（视调用情况，可能是相交部分矩形的高，也可能是宽）.
+ * @param x1 第一个矩形框的x坐标（或者y坐标，视调用情况，如果计算的是相交部分矩形的宽，则输入的是x坐标)
+ * @param w1 第一个矩形框的宽（而如果要计算相交部分矩形的高，则为y坐标，下面凡是说x坐标的，都可能为y坐标，当然，对应宽变为高)
+ * @param x2 第二个矩形框的x坐标
+ * @param w2 第二个矩形框的宽
+ * @details 在纸上画一下两个矩形，自己想一下如何计算交集的面积就很清楚下面的代码了：首先计算两个框左边的x坐标，比较大小，
+ *          取其大者，记为left；而后计算两个框右边的x坐标，取其小者，记为right，right-left即得相交部分矩形的宽。
+ * @return 两个矩形框相交部分矩形的宽或者高
+ */
 float overlap(float x1, float w1, float x2, float w2)
 {
     float l1 = x1 - w1/2;
@@ -74,7 +85,11 @@ float overlap(float x1, float w1, float x2, float w2)
     float right = r1 < r2 ? r1 : r2;
     return right - left;
 }
-
+/** 两个矩形框求交：计算两个矩形框a,b相交部分的面积.
+ * @return 两个矩形a,b相交部分的面积
+ * @note 当两个矩形不相交的时候，返回的值为0（此时计算得到的w,h将小于0,w,h是按照上面overlap()函数的方式计算得到的，
+ *       在纸上比划一下就知道为什么会小于0了）
+ */
 float box_intersection(box a, box b)
 {
     float w = overlap(a.x, a.w, b.x, b.w);
@@ -83,14 +98,18 @@ float box_intersection(box a, box b)
     float area = w*h;
     return area;
 }
-
+/** 两个矩形框求并：计算两个矩形框a,b求并的面积.
+ * @return 两个矩形a,b求并之后的总面积（就是a的面积加上b的面积减去相交部分的面积）
+ */
 float box_union(box a, box b)
 {
     float i = box_intersection(a, b);
     float u = a.w*a.h + b.w*b.h - i;
     return u;
 }
-
+/** 两个矩形框求并：计算两个矩形框a,b求并的面积.
+ * @return 两个矩形a,b求并之后的总面积（就是a的面积加上b的面积减去相交部分的面积）
+ */
 float box_iou(box a, box b)
 {
     return box_intersection(a, b)/box_union(a, b);
