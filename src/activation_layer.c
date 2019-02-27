@@ -1,3 +1,4 @@
+// 激活层CPU/GPU初始化 激活层 正向/方向传播 CPU/GPU 函数 接口
 #include "activation_layer.h"
 #include "utils.h"
 #include "cuda.h"
@@ -9,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// 创建激活层
+// 创建激活层====层初始化===网络初始化函数=====
 layer make_activation_layer(int batch, int inputs, ACTIVATION activation)
 {
     layer l = {0};
@@ -36,26 +37,27 @@ layer make_activation_layer(int batch, int inputs, ACTIVATION activation)
     return l;
 }
 
+// cpu 激活层 前向反向传播==============
+// 激活层前向传播
 void forward_activation_layer(layer l, network_state state)
 {
     copy_cpu(l.outputs*l.batch, state.input, 1, l.output, 1);
-    activate_array(l.output, l.outputs*l.batch, l.activation);
+    activate_array(l.output, l.outputs*l.batch, l.activation); // 执行激活函数
 }
-
+// 激活层反向传播
 void backward_activation_layer(layer l, network_state state)
 {
-    gradient_array(l.output, l.outputs*l.batch, l.activation, l.delta);
+    gradient_array(l.output, l.outputs*l.batch, l.activation, l.delta);// 激活梯度反向传播
     copy_cpu(l.outputs*l.batch, l.delta, 1, state.delta, 1);
 }
 
+// GPU 激活层 前向反向传播==============
 #ifdef GPU
-
 void forward_activation_layer_gpu(layer l, network_state state)
 {
     copy_ongpu(l.outputs*l.batch, state.input, 1, l.output_gpu, 1);
     activate_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation);
 }
-
 void backward_activation_layer_gpu(layer l, network_state state)
 {
     gradient_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation, l.delta_gpu);
