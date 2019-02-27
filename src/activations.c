@@ -1,3 +1,4 @@
+// 各种激活函数与反激活函数的 cpu 实现 单个元素/数组变量 枚举变量与字符串激活函数的相互转换
 #include "activations.h"
 
 #include <math.h>
@@ -5,11 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+// 激活函数 名称 字符串  枚举变量 通过switch case 转换成 字符串====
 char *get_activation_string(ACTIVATION a)
 {
     switch(a){
         case LOGISTIC:
-            return "logistic";
+            return "logistic"; // 注意这里是 return 直接返回，没用break;
         case LOGGY:
             return "loggy";
         case RELU:
@@ -37,9 +39,10 @@ char *get_activation_string(ACTIVATION a)
         default:
             break;
     }
-    return "relu";
+    return "relu"; // 默认返回 relu
 }
 
+// 字符串 转 枚举变量============
 ACTIVATION get_activation(char *s)
 {
     if (strcmp(s, "logistic")==0) return LOGISTIC;
@@ -59,6 +62,7 @@ ACTIVATION get_activation(char *s)
     return RELU;
 }
 
+// switch case 调用 不同 激活函数 对单个元素指向操作 返回输出值
 float activate(float x, ACTIVATION a)
 {
     switch(a){
@@ -92,6 +96,7 @@ float activate(float x, ACTIVATION a)
     return 0;
 }
 
+// 对数组元素 执行激活函数
 void activate_array(float *x, const int n, const ACTIVATION a)
 {
     int i;
@@ -100,6 +105,7 @@ void activate_array(float *x, const int n, const ACTIVATION a)
     }
 }
 
+// 单个元素的 反激活函数 激活函数 导数梯度 反向传播
 float gradient(float x, ACTIVATION a)
 {
     switch(a){
@@ -133,6 +139,7 @@ float gradient(float x, ACTIVATION a)
     return 0;
 }
 
+// 数组元素 激活函数 导数梯度反向传播
 void gradient_array(const float *x, const int n, const ACTIVATION a, float *delta)
 {
     int i;
