@@ -1,4 +1,5 @@
 // 均值池化层gpu实现  前向传播/反向传播核函数  接口函数 
+
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
