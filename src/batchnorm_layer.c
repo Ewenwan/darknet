@@ -1,33 +1,39 @@
+// 批 归一化层 层初始化函数  cpu/gpu 前向传播 / 反向传播函数 实现
 #include "batchnorm_layer.h"
 #include "blas.h"
 #include <stdio.h>
 
+// // 批 归一化层 层初始化函数
 layer make_batchnorm_layer(int batch, int w, int h, int c)
 {
+    // 打印信息====
     fprintf(stderr, "Batch Normalization Layer: %d x %d x %d image\n", w,h,c);
+    
     layer layer = {0};
     layer.type = BATCHNORM;
-    layer.batch = batch;
+    layer.batch = batch; // 一次图片数量
     layer.h = layer.out_h = h;
     layer.w = layer.out_w = w;
     layer.c = layer.out_c = c;
+    // cpu内存
     layer.output = calloc(h * w * c * batch, sizeof(float));
     layer.delta  = calloc(h * w * c * batch, sizeof(float));
+    
     layer.inputs = w*h*c;
     layer.outputs = layer.inputs;
 
-    layer.scales = calloc(c, sizeof(float));
+    layer.scales = calloc(c, sizeof(float)); // 缩放尺度
     layer.scale_updates = calloc(c, sizeof(float));
     int i;
     for(i = 0; i < c; ++i){
         layer.scales[i] = 1;
     }
 
-    layer.mean = calloc(c, sizeof(float));
-    layer.variance = calloc(c, sizeof(float));
+    layer.mean = calloc(c, sizeof(float)); // 均值
+    layer.variance = calloc(c, sizeof(float));// 方差
 
-    layer.rolling_mean = calloc(c, sizeof(float));
-    layer.rolling_variance = calloc(c, sizeof(float));
+    layer.rolling_mean = calloc(c, sizeof(float)); // 移动窗口平均
+    layer.rolling_variance = calloc(c, sizeof(float));// 
 
     layer.forward = forward_batchnorm_layer;
     layer.backward = backward_batchnorm_layer;
